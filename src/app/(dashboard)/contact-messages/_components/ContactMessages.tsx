@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Eye, Trash2, Mail } from "lucide-react";
+import { ViewContactModal } from "@/components/Dialogs/ViewContactModal";
+import { DeleteModal } from "@/components/Dialogs/DeleteModal";
 
 // Dummy data
 const dummyMessages = [
@@ -152,22 +154,25 @@ export default function ContactMessages() {
                 </TableCell>
                 <TableCell className="text-center">
                   <div className="flex items-center justify-center gap-2">
-                    <Button
+                    {/* <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-gray-600 hover:text-gray-900"
                       title="View message"
                     >
                       <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
+                    </Button> */}
+
+                    <ViewContactModal />
+                    {/* <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                       title="Delete message"
                     >
                       <Trash2 className="h-4 w-4" />
-                    </Button>
+                    </Button> */}
+                    <DeleteModal />
                   </div>
                 </TableCell>
               </TableRow>
