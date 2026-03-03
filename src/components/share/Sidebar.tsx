@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { LayoutDashboard, Grip, ShoppingBasket, Menu, X } from "lucide-react";
 import { LogoutModal } from "../Dialogs/LogoutModal";
 import { useState } from "react";
+import Image from "next/image";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -51,22 +52,26 @@ export function Sidebar() {
       {/* Sidebar */}
       <div
         className={cn(
-          "flex h-screen sticky bottom-0 top-0 flex-col bg-[#212121] z-50 transition-transform duration-300",
+          "flex h-screen sticky bottom-0 top-0 flex-col bg-[#CAE7FF] z-50 transition-transform duration-300",
           // Mobile এ
           "fixed lg:static",
           "w-[280px] sm:w-[300px] lg:w-[350px]",
           // Mobile এ hide/show control
           isMobileMenuOpen
             ? "translate-x-0"
-            : "-translate-x-full lg:translate-x-0"
+            : "-translate-x-full lg:translate-x-0",
         )}
       >
         {/* Header with Logo - Logo সবসময় center এ */}
-        <div className="h-[80px] flex items-center justify-center relative px-4">
-          <div>
-            <h1 className="text-green-500 text-2xl sm:text-3xl font-bold">
-              Logo
-            </h1>
+        <div className="flex items-center justify-center relative px-4 mt-2">
+          <div className="flex h-[70px] items-center gap-2">
+            <Image
+              src="/images/logo.png"
+              alt="Logo"
+              width={80}
+              height={80}
+              className="object-contain w-full h-full"
+            />
           </div>
 
           {/* Close Button - absolute position এ top right corner এ */}
@@ -82,7 +87,7 @@ export function Sidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 space-y-2 flex flex-col items-center justify-start px-3 overflow-y-auto mt-3">
+        <nav className="flex-1 space-y-3 flex flex-col items-center justify-start px-3 overflow-y-auto mt-10">
           {navigation.map((item) => {
             const isActive =
               pathname === item.href ||
@@ -96,20 +101,20 @@ export function Sidebar() {
                 className={cn(
                   "flex w-[90%] mx-auto items-center justify-start gap-2 space-y-1 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
                   isActive
-                    ? "bg-white text-black"
-                    : "text-slate-300 hover:bg-slate-600/50 hover:text-white"
+                    ? "bg-[#0F3D61] text-white"
+                    : "text-black hover:bg-slate-600/50 hover:text-white text-[18px]",
                 )}
               >
                 <item.icon
                   className={cn(
                     "h-5 w-5 sm:h-6 sm:w-6 transition-colors duration-200 flex-shrink-0",
-                    isActive ? "text-black" : ""
+                    isActive ? "text-white" : "",
                   )}
                 />
                 <span
                   className={cn(
                     "font-normal text-sm sm:text-base leading-[120%] transition-colors duration-200",
-                    isActive ? "text-black font-medium" : ""
+                    isActive ? "text-white font-medium text-[18px]" : "text-[18px]",
                   )}
                 >
                   {item.name}
