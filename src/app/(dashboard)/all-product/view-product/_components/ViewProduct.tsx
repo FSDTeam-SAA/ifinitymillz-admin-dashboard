@@ -3,39 +3,43 @@
 import React, { useState } from "react";
 import { ArrowLeft, ChevronLeft, ChevronRight, Pencil } from "lucide-react";
 import Image from "next/image";
-
-const product = {
-  name: "NAD+",
-  category: "Men HRT",
-  price: "$54",
-  size: "Small",
-  description:
-    "NAD+ (Nicotinamide Adenine Dinucleotide) is a vital coenzyme naturally found in the body and involved in key cellular processes. This premium NAD+ formulation is designed for individuals looking to support overall wellness, energy balance, and cellular health as part of a modern lifestyle.",
-  whatYouGet:
-    "You'll receive a carefully prepared NAD+ product designed to meet high-quality standards. Each unit is packaged securely to ensure consistency and reliability. Ideal for individuals incorporating NAD+ into their wellness routine, this product offers a streamlined and easy-to-use experience.",
-  images: [
-    "/images/carusal1.png",
-    "/images/carusal1.png",
-    "/images/carusal1.png",
-    "/images/carusal1.png",
-    "/images/carusal1.png",
-  ],
-};
+import { useQuery } from "@tanstack/react-query";
+// import { useSession } from "next-auth/react";
+import { useParams } from "next/navigation";
 
 function ViewProduct() {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const handlePrev = () => {
     setActiveIndex((prev) =>
-      prev === 0 ? product.images.length - 1 : prev - 1,
+      prev === 0 ? (singleProductData?.image?.length || 1) - 1 : prev - 1
     );
   };
 
   const handleNext = () => {
     setActiveIndex((prev) =>
-      prev === product.images.length - 1 ? 0 : prev + 1,
+      prev === (singleProductData?.image?.length || 1) - 1 ? 0 : prev + 1
     );
   };
+
+  const params = useParams();
+  const productId = params.id;
+
+  // const session = useSession();
+  // const TOKEN = session?.data?.user?.accessToken;
+
+  // ─── Fetch Single Product ─────────────────────────────────────────────
+  const { data: singleProductData } = useQuery({
+    queryKey: ["singleProduct", productId],
+    queryFn: async () => {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/product/${productId}`
+      );
+      if (!res.ok) throw new Error("Failed to fetch product details");
+      const result = await res.json();
+      return result?.data;
+    },
+  });
 
   return (
     <div className="min-h-screen">
@@ -60,7 +64,7 @@ function ViewProduct() {
           <div className="flex gap-4">
             {/* Thumbnail Column */}
             <div className="flex flex-col gap-2">
-              {product.images.map((img, i) => (
+              {singleProductData?.image?.map((img: string, i: number) => (
                 <button
                   key={i}
                   onClick={() => setActiveIndex(i)}
@@ -89,7 +93,7 @@ function ViewProduct() {
               <Image
                 width={300}
                 height={300}
-                src={product.images[activeIndex]}
+                src={singleProductData?.image?.[activeIndex] || "/images/carusal1.png"}
                 alt="product"
                 className="w-full h-full object-cover"
               />
@@ -110,19 +114,19 @@ function ViewProduct() {
             {/* Product Info */}
             <div className="flex-1 min-w-0">
               <h2 className="lg:text-[40px] md:text-[35px] text-[30px] font-bold text-[#212121] mb-2">
-                {product.name}
+                {singleProductData?.name}
               </h2>
               <p className="text-[20px] text-[#4E4E4E] leading-[150%] mb-3">
-                {product.description}
+                {singleProductData?.description}
               </p>
               <p className="text-[20px] text-black mb-[20px] font-normal">
-                {product.category}
+                {singleProductData?.category || "Men HRT"}
               </p>
               <p className="lg:text-[40px] md:text-[35px] text-[30px] font-bold text-gray-900 mb-1">
-                {product.price}
+                ${singleProductData?.price}
               </p>
               <p className="text-[20px] text-black mt-[20px] font-normal">
-                {product.size}
+                {singleProductData?.size?.[0] || "Small"}
               </p>
             </div>
           </div>
@@ -134,7 +138,7 @@ function ViewProduct() {
             What will you get?
           </h3>
           <p className="text-[20px] text-[#4E4E4E] leading-[150%] mb-3">
-            {product.whatYouGet}
+            {singleProductData?.whatWillYouGet}
           </p>
         </div>
       </div>

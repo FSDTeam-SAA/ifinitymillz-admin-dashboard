@@ -3,6 +3,8 @@
 import React, { useState, useRef } from "react";
 import { ArrowLeft, Upload, Box } from "lucide-react";
 import Image from "next/image";
+import { useMutation } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 
 const categories = [
   "NAD+",
@@ -23,29 +25,95 @@ function AddProducts() {
   const [price, setPrice] = useState("");
   const [selectedSize, setSelectedSize] = useState<SizeOption>("Size Large");
   const [dragOver, setDragOver] = useState(false);
-  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<File[]>([]);
+  const [previewImages, setPreviewImages] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const sizes: SizeOption[] = ["Size Large", "Size Medium", "Size Small"];
 
+  // Handle drag & drop
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
     const files = Array.from(e.dataTransfer.files).filter((f) =>
-      f.type.startsWith("image/"),
+      f.type.startsWith("image/")
     );
+    setUploadedImages((prev) => [...prev, ...files]);
+
     files.forEach((file) => {
       const url = URL.createObjectURL(file);
-      setUploadedImages((prev) => [...prev, url]);
+      setPreviewImages((prev) => [...prev, url]);
     });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
+    const files = Array.from(e.target.files || []).filter((f) =>
+      f.type.startsWith("image/")
+    );
+    setUploadedImages((prev) => [...prev, ...files]);
+
     files.forEach((file) => {
       const url = URL.createObjectURL(file);
-      setUploadedImages((prev) => [...prev, url]);
+      setPreviewImages((prev) => [...prev, url]);
     });
+  };
+
+  const session = useSession();
+  const TOKEN = session?.data?.user?.accessToken;
+
+  // Mutation to add product
+  const addProductMutation = useMutation({
+    mutationFn: async () => {
+      const formData = new FormData();
+      formData.append("name", productName);
+      formData.append("category", category);
+      formData.append("description", description);
+      formData.append("whatWillYouGet", whatYouGet);
+      formData.append("price", price);
+      formData.append("size", selectedSize);
+
+      uploadedImages.forEach((file) => {
+        formData.append("images", file);
+      });
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/product`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${TOKEN}`,
+          },
+          body: formData,
+        }
+      );
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData?.message || "Failed to add product");
+      }
+
+      return res.json();
+    },
+    onSuccess: (data) => {
+      console.log("Product added successfully:", data);
+      // Clear form after successful submission
+      setProductName("");
+      setCategory("");
+      setDescription("");
+      setWhatYouGet("");
+      setPrice("");
+      setSelectedSize("Size Large");
+      setUploadedImages([]);
+      setPreviewImages([]);
+      alert("Product added successfully!");
+    },
+    onError: (error) => {
+      alert(error?.message || "Failed to add product");
+    },
+  });
+
+  const handleSubmit = () => {
+    addProductMutation.mutate();
   };
 
   return (
@@ -58,7 +126,10 @@ function AddProducts() {
         <h1 className="text-[36px] leading-[120px] font-bold text-[#000000]">
           Add Product
         </h1>
-        <button className="flex items-center justify-center gap-2 bg-[#0024DA] hover:bg-[#0024DA]/90 text-white text-sm font-medium px-5 h-12 transition-all duration-200 rounded-lg shadow-sm">
+        <button
+          onClick={handleSubmit}
+          className="flex items-center justify-center gap-2 bg-[#0024DA] hover:bg-[#0024DA]/90 text-white text-sm font-medium px-5 h-12 transition-all duration-200 rounded-lg shadow-sm"
+        >
           Publish Product
           <Box size={16} />
         </button>
@@ -148,7 +219,7 @@ function AddProducts() {
             Product Price
           </label>
           <input
-            type="text"
+            type="number"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             placeholder="Type Product price here. . ."
@@ -198,9 +269,9 @@ function AddProducts() {
             }`}
             style={{ minHeight: "180px" }}
           >
-            {uploadedImages.length > 0 ? (
+            {previewImages.length > 0 ? (
               <div className="flex flex-wrap gap-3 px-4 justify-center">
-                {uploadedImages.map((src, i) => (
+                {previewImages.map((src, i) => (
                   <Image
                     width={400}
                     height={400}

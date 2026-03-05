@@ -3,6 +3,9 @@
 import React, { useState, useRef } from "react";
 import { ArrowLeft, Upload, Save } from "lucide-react";
 import Image from "next/image";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 const categories = [
   "NAD+",
@@ -15,6 +18,18 @@ const categories = [
 
 type SizeOption = "Size Large" | "Size Medium" | "Size Small";
 
+interface ProductResponse {
+  data: {
+    name: string;
+    category: string;
+    description: string;
+    whatWillYouGet: string;
+    price: number;
+    size: string[];
+    image: string[];
+  };
+}
+
 function EditProducts() {
   const [productName, setProductName] = useState("");
   const [category, setCategory] = useState("");
@@ -23,29 +38,122 @@ function EditProducts() {
   const [price, setPrice] = useState("");
   const [selectedSize, setSelectedSize] = useState<SizeOption>("Size Large");
   const [dragOver, setDragOver] = useState(false);
-  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<File[]>([]);
+  const [previewImages, setPreviewImages] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const sizes: SizeOption[] = ["Size Large", "Size Medium", "Size Small"];
 
+  const params = useParams();
+  const productId = params.id;
+
+  const session = useSession();
+  const TOKEN = session?.data?.user?.accessToken;
+
+  // ─── Fetch Single Product ─────────────────────────────────────────────
+  const { data: productData } = useQuery({
+    queryKey: ["productDetails", productId],
+    queryFn: async () => {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/product/${productId}`
+      );
+      return res.json() as Promise<ProductResponse>;
+    },
+  });
+
+  React.useEffect(() => {
+    if (productData?.data) {
+      const product = productData.data;
+      setProductName(product.name || "");
+      setCategory(product.category || "");
+      setDescription(product.description || "");
+      setWhatYouGet(product.whatWillYouGet || "");
+      setPrice(product.price?.toString() || "");
+      // Take first size from array for default selection
+      if (product.size?.length) {
+        const sizeMap: Record<string, SizeOption> = {
+          large: "Size Large",
+          medium: "Size Medium",
+          small: "Size Small",
+        };
+        setSelectedSize(
+          sizeMap[product.size[0].toLowerCase()] || "Size Large"
+        );
+      }
+      // Set images
+      if (product.image?.length) {
+        setPreviewImages(product.image);
+      }
+    }
+  }, [productData]);
+
+  // ─── Handle Drag & Drop ──────────────────────────────────────────────
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
     const files = Array.from(e.dataTransfer.files).filter((f) =>
-      f.type.startsWith("image/"),
+      f.type.startsWith("image/")
     );
+    setUploadedImages((prev) => [...prev, ...files]);
     files.forEach((file) => {
       const url = URL.createObjectURL(file);
-      setUploadedImages((prev) => [...prev, url]);
+      setPreviewImages((prev) => [...prev, url]);
     });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
+    const files = Array.from(e.target.files || []).filter((f) =>
+      f.type.startsWith("image/")
+    );
+    setUploadedImages((prev) => [...prev, ...files]);
     files.forEach((file) => {
       const url = URL.createObjectURL(file);
-      setUploadedImages((prev) => [...prev, url]);
+      setPreviewImages((prev) => [...prev, url]);
     });
+  };
+
+  // ─── Update Mutation ────────────────────────────────────────────────
+  const productUpdateMutation = useMutation({
+    mutationFn: async () => {
+      const formData = new FormData();
+      formData.append("name", productName);
+      formData.append("category", category);
+      formData.append("description", description);
+      formData.append("whatWillYouGet", whatYouGet);
+      formData.append("price", price);
+      formData.append("size", selectedSize);
+
+      uploadedImages.forEach((file) => {
+        formData.append("images", file);
+      });
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/product/${productId}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${TOKEN}`,
+          },
+          body: formData,
+        }
+      );
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData?.message || "Failed to update product");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      alert("Product updated successfully!");
+    },
+    onError: (error) => {
+      alert(error?.message || "Failed to update product");
+    },
+  });
+
+  const handleSubmit = () => {
+    productUpdateMutation.mutate();
   };
 
   return (
@@ -58,7 +166,10 @@ function EditProducts() {
         <h1 className="text-[36px] leading-[120px] font-bold text-[#000000]">
           Edit Product
         </h1>
-        <button className="flex items-center justify-center gap-2 bg-[#0024DA] hover:bg-[#0024DA]/90 text-white text-sm font-medium px-5 h-12 transition-all duration-200 rounded-lg shadow-sm">
+        <button
+          onClick={handleSubmit}
+          className="flex items-center justify-center gap-2 bg-[#0024DA] hover:bg-[#0024DA]/90 text-white text-sm font-medium px-5 h-12 transition-all duration-200 rounded-lg shadow-sm"
+        >
           Save
           <Save size={16} />
         </button>
@@ -198,9 +309,9 @@ function EditProducts() {
             }`}
             style={{ minHeight: "180px" }}
           >
-            {uploadedImages.length > 0 ? (
+            {previewImages.length > 0 ? (
               <div className="flex flex-wrap gap-3 px-4 justify-center">
-                {uploadedImages.map((src, i) => (
+                {previewImages.map((src, i) => (
                   <Image
                     width={400}
                     height={400}

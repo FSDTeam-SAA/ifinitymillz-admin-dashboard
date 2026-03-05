@@ -61,7 +61,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 function SellReport() {
   const [activeFilter, setActiveFilter] = useState<FilterType>("Year");
-  const filters: FilterType[] = ["Day", "Week", "Month", "Year"];
+  const filters: FilterType[] = ["Week", "Year"];
 
   const currentYear = new Date().getFullYear();
 
