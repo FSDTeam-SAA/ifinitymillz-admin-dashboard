@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import React, { useState } from "react";
 import {
   LineChart,
@@ -12,52 +14,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const monthData = [
-  { date: "3 Oct", thisMonth: 1600, lastMonth: 0 },
-  { date: "10 Oct", thisMonth: 2600, lastMonth: 1100 },
-  { date: "14 Oct", thisMonth: 1950, lastMonth: 900 },
-  { date: "20 Oct", thisMonth: 3900, lastMonth: 2800 },
-  { date: "23 Oct", thisMonth: 1750, lastMonth: 3600 },
-  { date: "27 Oct", thisMonth: 750, lastMonth: 2900 },
-  { date: "30 Oct", thisMonth: 3700, lastMonth: 1800 },
-];
-
-const weekData = [
-  { date: "Mon", thisMonth: 1200, lastMonth: 800 },
-  { date: "Tue", thisMonth: 2100, lastMonth: 1500 },
-  { date: "Wed", thisMonth: 1800, lastMonth: 2200 },
-  { date: "Thu", thisMonth: 3200, lastMonth: 1900 },
-  { date: "Fri", thisMonth: 2800, lastMonth: 3100 },
-  { date: "Sat", thisMonth: 3500, lastMonth: 2400 },
-  { date: "Sun", thisMonth: 1600, lastMonth: 2800 },
-];
-
-const dayData = [
-  { date: "6am", thisMonth: 400, lastMonth: 200 },
-  { date: "9am", thisMonth: 1100, lastMonth: 700 },
-  { date: "12pm", thisMonth: 2400, lastMonth: 1800 },
-  { date: "3pm", thisMonth: 3100, lastMonth: 2600 },
-  { date: "6pm", thisMonth: 2700, lastMonth: 3200 },
-  { date: "9pm", thisMonth: 1800, lastMonth: 2100 },
-];
-
-const yearData = [
-  { date: "Jan", thisMonth: 3200, lastMonth: 2800 },
-  { date: "Mar", thisMonth: 2600, lastMonth: 3400 },
-  { date: "May", thisMonth: 4100, lastMonth: 2900 },
-  { date: "Jul", thisMonth: 3700, lastMonth: 3800 },
-  { date: "Sep", thisMonth: 2900, lastMonth: 4200 },
-  { date: "Nov", thisMonth: 4500, lastMonth: 3100 },
-];
-
 type FilterType = "Day" | "Week" | "Month" | "Year";
-
-const dataMap: Record<FilterType, typeof monthData> = {
-  Day: dayData,
-  Week: weekData,
-  Month: monthData,
-  Year: yearData,
-};
 
 const formatYAxis = (value: number) => {
   if (value === 0) return "0";
@@ -103,9 +60,45 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 function SellReport() {
-  const [activeFilter, setActiveFilter] = useState<FilterType>("Month");
+  const [activeFilter, setActiveFilter] = useState<FilterType>("Year");
   const filters: FilterType[] = ["Day", "Week", "Month", "Year"];
-  const data = dataMap[activeFilter];
+
+  const currentYear = new Date().getFullYear();
+
+  const session = useSession();
+  const TOKEN = session?.data?.user?.accessToken;
+  
+
+  const { data: sellReportData } = useQuery({
+    queryKey: ["sellReport", activeFilter, currentYear],
+    queryFn: async () => {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/dashboard/sales-report?range=${activeFilter.toLowerCase()}&year=${currentYear}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${TOKEN}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch sell report");
+      }
+
+      const result = await res.json();
+      return result?.data;
+    },
+  });
+
+  // 🔥 Convert API response to recharts format
+  const chartData =
+    sellReportData?.labels?.map((label: string, index: number) => ({
+      date: label,
+      thisMonth: sellReportData?.thisPeriod?.[index] ?? 0,
+      lastMonth: sellReportData?.lastPeriod?.[index] ?? 0,
+    })) || [];
 
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm w-full my-10">
@@ -146,11 +139,10 @@ function SellReport() {
       {/* Chart */}
       <ResponsiveContainer width="100%" height={300}>
         <LineChart
-          data={data}
+          data={chartData}
           margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
         >
           <CartesianGrid
-            strokeDasharray=""
             stroke="#f0f0f0"
             vertical={false}
           />
@@ -166,7 +158,6 @@ function SellReport() {
             axisLine={false}
             tickLine={false}
             tick={{ fontSize: 12, fill: "#9ca3af" }}
-            ticks={[0, 1000, 2000, 3000, 4000]}
             dx={-5}
           />
           <Tooltip content={<CustomTooltip />} />

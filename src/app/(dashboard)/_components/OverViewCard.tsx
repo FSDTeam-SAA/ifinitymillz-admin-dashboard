@@ -1,8 +1,38 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 
 function OverViewCard() {
+  const session = useSession();
+  const TOKEN = session?.data?.user?.accessToken;
+
+  const { data: overviewData, isLoading } = useQuery({
+    queryKey: ["overview-data"],
+    queryFn: async () => {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/dashboard/overview`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${TOKEN}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch overview data");
+      }
+
+      const result = await res.json();
+      return result?.data;
+    },
+  });
+
   return (
     <div className="">
       {/* Header */}
@@ -12,9 +42,9 @@ function OverViewCard() {
           <p className="text-base text-[#929292] mt-3">Dashboard</p>
         </div>
         <Link href="/all-product/add-product">
-        <button className="bg-[#0024DA] hover:bg-[#0024DA]/90 text-white text-sm font-medium px-4 h-[48px] rounded-lg transition-colors duration-200">
-          Add Product +
-        </button>
+          <button className="bg-[#0024DA] hover:bg-[#0024DA]/90 text-white text-sm font-medium px-4 h-[48px] rounded-lg transition-colors duration-200">
+            Add Product +
+          </button>
         </Link>
       </div>
 
@@ -28,7 +58,9 @@ function OverViewCard() {
             </p>
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block"></span>
-              <span className="text-lg font-bold text-gray-800">132,570</span>
+              <span className="text-lg font-bold text-gray-800">
+                {isLoading ? "..." : overviewData?.totalSales ?? 0}
+              </span>
             </div>
           </div>
 
@@ -50,7 +82,9 @@ function OverViewCard() {
             </p>
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-orange-400 inline-block"></span>
-              <span className="text-lg font-bold text-gray-800">08</span>
+              <span className="text-lg font-bold text-gray-800">
+                {isLoading ? "..." : overviewData?.totalProducts ?? 0}
+              </span>
             </div>
           </div>
 
