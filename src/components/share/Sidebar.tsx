@@ -16,6 +16,7 @@ const navigation = [
     icon: LayoutPanelLeft,
   },
   { name: "All Treatment", href: "/all-treatment", icon: HandCoins },
+   { name: "Treatment Benefit Details", href: "/benefit-details", icon: HandCoins },
   { name: "User List", href: "/all-users", icon: User  },
   { name: "Order History", href: "/order-history", icon: ClipboardList },
   { name: "Contact Messages", href: "/contact-messages", icon: ShoppingBasket },

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -16,6 +15,11 @@ import { Trash2, Plus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSession } from "next-auth/react";
 import { useMutation } from "@tanstack/react-query";
+import dynamic from "next/dynamic";
+import "react-quill/dist/quill.snow.css";
+
+// Dynamic import to avoid SSR issues with React Quill
+const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
 type Question = {
   id: number;
@@ -35,7 +39,8 @@ export default function AddTreatment() {
   const [questions, setQuestions] = useState<Question[]>([
     {
       id: 1,
-      question: "Which of the following best describes what you're experiencing right now?",
+      question:
+        "Which of the following best describes what you're experiencing right now?",
       options: [
         "Low energy or persistent fatigue",
         "Irritability, mood changes, or feeling 'off'",
@@ -52,7 +57,8 @@ export default function AddTreatment() {
       ...questions,
       {
         id: Date.now(),
-        question: "Which of the following best describes what you're experiencing right now?",
+        question:
+          "Which of the following best describes what you're experiencing right now?",
         options: ["", "", "", "", ""],
         correctAnswer: "",
       },
@@ -70,53 +76,58 @@ export default function AddTreatment() {
         q.id === qId
           ? {
               ...q,
-              options: q.options.map((opt, i) => (i === optIndex ? value : opt)),
+              options: q.options.map((opt, i) =>
+                i === optIndex ? value : opt,
+              ),
             }
-          : q
-      )
+          : q,
+      ),
     );
   };
 
   const updateCorrectAnswer = (qId: number, value: string) => {
     setQuestions(
-      questions.map((q) => (q.id === qId ? { ...q, correctAnswer: value } : q))
+      questions.map((q) => (q.id === qId ? { ...q, correctAnswer: value } : q)),
     );
   };
 
   // ─── Add Treatment Mutation ─────────────────────────
   const addTreatmentMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/treatment`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${TOKEN}`,
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/treatment`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${TOKEN}`,
+          },
+          body: JSON.stringify({
+            name: treatmentName,
+            category,
+            description,
+            treatmentQuestions: questions.map((q) => ({
+              question: q.question,
+              options: q.options,
+              answare: q.correctAnswer,
+            })),
+          }),
         },
-        body: JSON.stringify({
-          name: treatmentName,
-          category,
-          description,
-          treatmentQuestions: questions.map((q) => ({
-            question: q.question,
-            options: q.options,
-            answare: q.correctAnswer,
-          })),
-        }),
-      });
+      );
       if (!res.ok) throw new Error("Failed to add treatment");
       return res.json();
     },
     onSuccess: (data) => {
       console.log("Treatment added successfully:", data);
       alert("Treatment added successfully!");
-      // Reset form after successful submission
       setTreatmentName("");
       setCategory("");
       setDescription("");
       setQuestions([
         {
           id: 1,
-          question: "Which of the following best describes what you're experiencing right now?",
+          question:
+            "Which of the following best describes what you're experiencing right now?",
           options: [
             "Low energy or persistent fatigue",
             "Irritability, mood changes, or feeling 'off'",
@@ -153,7 +164,9 @@ export default function AddTreatment() {
             onClick={() => addTreatmentMutation.mutate()}
             disabled={addTreatmentMutation.isPending}
           >
-            {addTreatmentMutation.isPending ? "Publishing..." : "Publish Treatment"}
+            {addTreatmentMutation.isPending
+              ? "Publishing..."
+              : "Publish Treatment"}
           </Button>
         </div>
 
@@ -181,21 +194,35 @@ export default function AddTreatment() {
                 <SelectContent>
                   <SelectItem value="Men HRT">Men HRT</SelectItem>
                   <SelectItem value="Women HRT">Women HRT</SelectItem>
-                  <SelectItem value="General Wellness">General Wellness</SelectItem>
+                  <SelectItem value="General Wellness">
+                    General Wellness
+                  </SelectItem>
                   <SelectItem value="Performance">Performance</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Description */}
+            {/* Description — React Quill */}
             <div className="space-y-2">
               <Label>Treatment Description</Label>
-              <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Type treatment description here..."
-                className="min-h-[140px]"
-              />
+              <div className="rounded-md overflow-hidden border border-input">
+                <style>{`.ql-editor { min-height: 220px; }`}</style>
+                <ReactQuill
+                  theme="snow"
+                  value={description}
+                  onChange={setDescription}
+                  placeholder="Type treatment description here..."
+                  modules={{
+                    toolbar: [
+                      [{ header: [1, 2, 3, false] }],
+                      ["bold", "italic", "underline", "strike"],
+                      [{ list: "ordered" }, { list: "bullet" }],
+                      ["link"],
+                      ["clean"],
+                    ],
+                  }}
+                />
+              </div>
             </div>
 
             {/* Questions */}
@@ -235,7 +262,9 @@ export default function AddTreatment() {
                         <Input
                           key={i}
                           value={opt}
-                          onChange={(e) => updateOption(q.id, i, e.target.value)}
+                          onChange={(e) =>
+                            updateOption(q.id, i, e.target.value)
+                          }
                           placeholder={`Option ${i + 1}`}
                         />
                       ))}

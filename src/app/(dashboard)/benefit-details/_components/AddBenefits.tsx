@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,12 +13,13 @@ import {
 } from "@/components/ui/select";
 import { Trash2, Plus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useMutation } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import "react-quill/dist/quill.snow.css";
+import { toast } from "sonner";
 
+// Dynamic import to avoid SSR issues with React Quill
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
 type Question = {
@@ -28,61 +29,37 @@ type Question = {
   correctAnswer: string;
 };
 
-type TreatmentQuestion = {
-  question: string;
-  options: string[];
-  answare: string;
-};
-
-export default function EditTreatment() {
-  const params = useParams();
-  const treatmentId = params.id as string;
-
+export default function AddBenefits() {
   const [treatmentName, setTreatmentName] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
-  const [questions, setQuestions] = useState<Question[]>([]);
 
   const session = useSession();
   const TOKEN = session?.data?.user?.accessToken || "";
 
-  // ─── Fetch Single Treatment ─────────────────────────
-  const { data: singleTreatment } = useQuery({
-    queryKey: ["singleTreatment", treatmentId],
-    queryFn: async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/treatment/${treatmentId}`
-      );
-      if (!res.ok) throw new Error("Failed to fetch treatment");
-      const result = await res.json();
-      return result.data;
+  const [questions, setQuestions] = useState<Question[]>([
+    {
+      id: 1,
+      question:
+        "Which of the following best describes what you're experiencing right now?",
+      options: [
+        "Low energy or persistent fatigue",
+        "Irritability, mood changes, or feeling 'off'",
+        "Loss of muscle or increased body fat",
+        "Decreased libido or sexual performance concerns",
+        "None of these apply",
+      ],
+      correctAnswer: "Low energy or persistent fatigue",
     },
-  });
+  ]);
 
-  // ─── Populate default input values ───────────────────
-  useEffect(() => {
-    if (singleTreatment) {
-      setTreatmentName(singleTreatment.name || "");
-      setCategory(singleTreatment.category || "");
-      setDescription(singleTreatment.description || "");
-      setQuestions(
-        singleTreatment.treatmentQuestions?.map((q: TreatmentQuestion, i: number) => ({
-          id: i + 1,
-          question: q.question,
-          options: q.options,
-          correctAnswer: q.answare,
-        })) || []
-      );
-    }
-  }, [singleTreatment]);
-
-  // ─── Question Handling ───────────────────────────────
   const addNewQuestion = () => {
     setQuestions([
       ...questions,
       {
         id: Date.now(),
-        question: "Which of the following best describes what you're experiencing right now?",
+        question:
+          "Which of the following best describes what you're experiencing right now?",
         options: ["", "", "", "", ""],
         correctAnswer: "",
       },
@@ -98,28 +75,36 @@ export default function EditTreatment() {
     setQuestions(
       questions.map((q) =>
         q.id === qId
-          ? { ...q, options: q.options.map((opt, i) => (i === optIndex ? value : opt)) }
-          : q
-      )
+          ? {
+              ...q,
+              options: q.options.map((opt, i) =>
+                i === optIndex ? value : opt,
+              ),
+            }
+          : q,
+      ),
     );
   };
 
   const updateCorrectAnswer = (qId: number, value: string) => {
     setQuestions(
-      questions.map((q) => (q.id === qId ? { ...q, correctAnswer: value } : q))
+      questions.map((q) => (q.id === qId ? { ...q, correctAnswer: value } : q)),
     );
   };
 
-  // ─── Update Mutation ────────────────────────────────
-  const editMutation = useMutation({
+  // ─── Add Treatment Mutation ─────────────────────────
+  const addTreatmentMutation = useMutation({
     mutationFn: async () => {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/treatment/${treatmentId}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/treatment-benefit`,
         {
-          method: "PUT",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${TOKEN}`,
+          },
           body: JSON.stringify({
-            name: treatmentName,
+            title: treatmentName,
             category,
             description,
             treatmentQuestions: questions.map((q) => ({
@@ -128,18 +113,36 @@ export default function EditTreatment() {
               answare: q.correctAnswer,
             })),
           }),
-        }
+        },
       );
-      if (!res.ok) throw new Error("Failed to update treatment");
+      if (!res.ok) throw new Error("Failed to add treatment");
       return res.json();
     },
     onSuccess: (data) => {
-      alert("Treatment updated successfully!");
-      console.log("Updated treatment:", data);
+      console.log("Treatment added successfully:", data);
+      toast.success("Treatment added successfully!");
+      setTreatmentName("");
+      setCategory("");
+      setDescription("");
+      setQuestions([
+        {
+          id: 1,
+          question:
+            "Which of the following best describes what you're experiencing right now?",
+          options: [
+            "Low energy or persistent fatigue",
+            "Irritability, mood changes, or feeling 'off'",
+            "Loss of muscle or increased body fat",
+            "Decreased libido or sexual performance concerns",
+            "None of these apply",
+          ],
+          correctAnswer: "Low energy or persistent fatigue",
+        },
+      ]);
     },
     onError: (err) => {
-      console.error(err);
-      alert("Failed to update treatment. Try again.");
+      console.error("Error adding treatment:", err);
+      toast.error("Failed to add treatment. Please try again.");
     },
   });
 
@@ -153,16 +156,18 @@ export default function EditTreatment() {
               ←
             </Button>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-              Edit Treatment
+              Add Treatment Benefits
             </h1>
           </div>
 
           <Button
             className="bg-blue-600 hover:bg-blue-700 px-6"
-            onClick={() => editMutation.mutate()}
-            disabled={editMutation.isPending}
+            onClick={() => addTreatmentMutation.mutate()}
+            disabled={addTreatmentMutation.isPending}
           >
-            {editMutation.isPending ? "Updating..." : "Publish Treatment"}
+            {addTreatmentMutation.isPending
+              ? "Publishing..."
+              : "Publish Benefits"}
           </Button>
         </div>
 
@@ -170,7 +175,7 @@ export default function EditTreatment() {
           <CardContent className="p-6 md:p-8 space-y-8">
             {/* Name */}
             <div className="space-y-2">
-              <Label htmlFor="name">Treatment Name</Label>
+              <Label htmlFor="name">Treatment Title</Label>
               <Input
                 id="name"
                 value={treatmentName}
@@ -190,7 +195,9 @@ export default function EditTreatment() {
                 <SelectContent>
                   <SelectItem value="Men HRT">Men HRT</SelectItem>
                   <SelectItem value="Women HRT">Women HRT</SelectItem>
-                  <SelectItem value="General Wellness">General Wellness</SelectItem>
+                  <SelectItem value="General Wellness">
+                    General Wellness
+                  </SelectItem>
                   <SelectItem value="Performance">Performance</SelectItem>
                 </SelectContent>
               </Select>
@@ -256,7 +263,9 @@ export default function EditTreatment() {
                         <Input
                           key={i}
                           value={opt}
-                          onChange={(e) => updateOption(q.id, i, e.target.value)}
+                          onChange={(e) =>
+                            updateOption(q.id, i, e.target.value)
+                          }
                           placeholder={`Option ${i + 1}`}
                         />
                       ))}
