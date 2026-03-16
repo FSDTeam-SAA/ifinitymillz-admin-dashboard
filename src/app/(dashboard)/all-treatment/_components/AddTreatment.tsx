@@ -11,13 +11,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Trash2, Plus, ArrowLeft } from "lucide-react";
+import { Trash2, Plus, ArrowLeft, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSession } from "next-auth/react";
 import { useMutation } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import "react-quill/dist/quill.snow.css";
 import Link from "next/link";
+import { toast } from "sonner";
 
 // Dynamic import to avoid SSR issues with React Quill
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
@@ -120,7 +121,7 @@ export default function AddTreatment() {
     },
     onSuccess: (data) => {
       console.log("Treatment added successfully:", data);
-      alert("Treatment added successfully!");
+      toast.success("Treatment added successfully!");
       setTreatmentName("");
       setCategory("");
       setDescription("");
@@ -142,7 +143,7 @@ export default function AddTreatment() {
     },
     onError: (err) => {
       console.error("Error adding treatment:", err);
-      alert("Failed to add treatment. Please try again.");
+      toast.error("Failed to add treatment. Please try again.");
     },
   });
 
@@ -163,10 +164,13 @@ export default function AddTreatment() {
           </div>
 
           <Button
-            className="bg-blue-600 hover:bg-blue-700 px-6"
+            className="bg-blue-600 hover:bg-blue-700 px-6 flex items-center gap-2"
             onClick={() => addTreatmentMutation.mutate()}
             disabled={addTreatmentMutation.isPending}
           >
+            {addTreatmentMutation.isPending && (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            )}
             {addTreatmentMutation.isPending
               ? "Publishing..."
               : "Publish Treatment"}
@@ -197,10 +201,11 @@ export default function AddTreatment() {
                 <SelectContent>
                   <SelectItem value="Men HRT">Men HRT</SelectItem>
                   <SelectItem value="Women HRT">Women HRT</SelectItem>
-                  <SelectItem value="General Wellness">
-                    General Wellness
+                  <SelectItem value="Weight Loss">
+                    Weight Loss
                   </SelectItem>
-                  <SelectItem value="Performance">Performance</SelectItem>
+                  <SelectItem value="IV Therapy">IV Therapy</SelectItem>
+                  <SelectItem value="Peptides">Peptides</SelectItem>
                 </SelectContent>
               </Select>
             </div>

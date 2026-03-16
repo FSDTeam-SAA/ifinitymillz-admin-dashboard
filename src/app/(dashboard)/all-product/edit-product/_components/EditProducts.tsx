@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { ArrowLeft, Upload, Save } from "lucide-react";
+import { ArrowLeft, Upload, Save, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 const categories = [
   "NAD+",
@@ -56,7 +57,7 @@ function EditProducts() {
     queryKey: ["productDetails", productId],
     queryFn: async () => {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/product/${productId}`
+        `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/product/${productId}`,
       );
       return res.json() as Promise<ProductResponse>;
     },
@@ -77,9 +78,7 @@ function EditProducts() {
           medium: "Size Medium",
           small: "Size Small",
         };
-        setSelectedSize(
-          sizeMap[product.size[0].toLowerCase()] || "Size Large"
-        );
+        setSelectedSize(sizeMap[product.size[0].toLowerCase()] || "Size Large");
       }
       // Set images
       if (product.image?.length) {
@@ -93,7 +92,7 @@ function EditProducts() {
     e.preventDefault();
     setDragOver(false);
     const files = Array.from(e.dataTransfer.files).filter((f) =>
-      f.type.startsWith("image/")
+      f.type.startsWith("image/"),
     );
     setUploadedImages((prev) => [...prev, ...files]);
     files.forEach((file) => {
@@ -104,7 +103,7 @@ function EditProducts() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []).filter((f) =>
-      f.type.startsWith("image/")
+      f.type.startsWith("image/"),
     );
     setUploadedImages((prev) => [...prev, ...files]);
     files.forEach((file) => {
@@ -136,7 +135,7 @@ function EditProducts() {
             Authorization: `Bearer ${TOKEN}`,
           },
           body: formData,
-        }
+        },
       );
 
       if (!res.ok) {
@@ -146,10 +145,10 @@ function EditProducts() {
       return res.json();
     },
     onSuccess: () => {
-      alert("Product updated successfully!");
+      toast.success("Product updated successfully!");
     },
     onError: (error) => {
-      alert(error?.message || "Failed to update product");
+      toast.error(error?.message || "Failed to update product");
     },
   });
 
@@ -162,19 +161,29 @@ function EditProducts() {
       {/* Top Header */}
       <div className="px-6 py-3 flex items-center justify-between">
         <Link href="/all-product">
-         <button className="text-gray-600 hover:text-gray-800 transition-colors">
-          <ArrowLeft size={20} />
-        </button>
-       </Link>
+          <button className="text-gray-600 hover:text-gray-800 transition-colors">
+            <ArrowLeft size={20} />
+          </button>
+        </Link>
         <h1 className="text-[36px] leading-[120px] font-bold text-[#000000]">
           Edit Product
         </h1>
         <button
           onClick={handleSubmit}
-          className="flex items-center justify-center gap-2 bg-[#0024DA] hover:bg-[#0024DA]/90 text-white text-sm font-medium px-5 h-12 transition-all duration-200 rounded-lg shadow-sm"
+          disabled={productUpdateMutation.isPending}
+          className="flex items-center justify-center gap-2 bg-[#0024DA] hover:bg-[#0024DA]/90 text-white text-sm font-medium px-5 h-12 transition-all duration-200 rounded-lg shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Save
-          <Save size={16} />
+          {productUpdateMutation.isPending ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              Save
+              <Save size={16} />
+            </>
+          )}
         </button>
       </div>
 

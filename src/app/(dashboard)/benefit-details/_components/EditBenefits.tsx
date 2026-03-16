@@ -194,8 +194,9 @@ export default function EditBenefits() {
                 <SelectContent>
                   <SelectItem value="Men HRT">Men HRT</SelectItem>
                   <SelectItem value="Women HRT">Women HRT</SelectItem>
-                  <SelectItem value="General Wellness">General Wellness</SelectItem>
-                  <SelectItem value="Performance">Performance</SelectItem>
+                  <SelectItem value="Weight Loss">Weight Loss</SelectItem>
+                  <SelectItem value="IV Therapy">IV Therapy</SelectItem>
+                  <SelectItem value="Peptides">Peptides</SelectItem>
                 </SelectContent>
               </Select>
             </div>

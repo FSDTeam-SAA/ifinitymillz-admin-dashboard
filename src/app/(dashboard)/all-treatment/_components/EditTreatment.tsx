@@ -19,6 +19,7 @@ import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 import "react-quill/dist/quill.snow.css";
 import Link from "next/link";
+import { toast } from "sonner";
 
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
@@ -135,12 +136,12 @@ export default function EditTreatment() {
       return res.json();
     },
     onSuccess: (data) => {
-      alert("Treatment updated successfully!");
+      toast.success("Treatment updated successfully!");
       console.log("Updated treatment:", data);
     },
     onError: (err) => {
       console.error(err);
-      alert("Failed to update treatment. Try again.");
+      toast.error("Failed to update treatment. Try again.");
     },
   });
 
@@ -193,8 +194,9 @@ export default function EditTreatment() {
                 <SelectContent>
                   <SelectItem value="Men HRT">Men HRT</SelectItem>
                   <SelectItem value="Women HRT">Women HRT</SelectItem>
-                  <SelectItem value="General Wellness">General Wellness</SelectItem>
-                  <SelectItem value="Performance">Performance</SelectItem>
+                  <SelectItem value="Weight Loss">Weight Loss</SelectItem>
+                  <SelectItem value="IV Therapy">IV Therapy</SelectItem>
+                  <SelectItem value="Peptides">Peptides</SelectItem>
                 </SelectContent>
               </Select>
             </div>

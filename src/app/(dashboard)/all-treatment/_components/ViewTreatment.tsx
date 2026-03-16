@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -130,14 +129,13 @@ export default function ViewTreatment() {
             </div>
 
             {/* Description */}
-            <div className="space-y-2">
-              <Label>Treatment Description</Label>
-              <Textarea
-                value={description}
-                disabled
-                className="min-h-[140px] bg-gray-50"
-              />
-            </div>
+           <div className="space-y-2">
+  <Label>Treatment Description</Label>
+  <div
+    className="min-h-[140px] bg-gray-50 p-2 rounded border"
+    dangerouslySetInnerHTML={{ __html: description || "" }}
+  />
+</div>
 
             {/* Questions */}
             <div className="space-y-6 pt-6 border-t">

@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { ArrowLeft, Upload, Box } from "lucide-react";
+import { ArrowLeft, Upload, Box, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useMutation } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 const categories = [
   "NAD+",
@@ -37,7 +38,7 @@ function AddProducts() {
     e.preventDefault();
     setDragOver(false);
     const files = Array.from(e.dataTransfer.files).filter((f) =>
-      f.type.startsWith("image/")
+      f.type.startsWith("image/"),
     );
     setUploadedImages((prev) => [...prev, ...files]);
 
@@ -49,7 +50,7 @@ function AddProducts() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []).filter((f) =>
-      f.type.startsWith("image/")
+      f.type.startsWith("image/"),
     );
     setUploadedImages((prev) => [...prev, ...files]);
 
@@ -85,7 +86,7 @@ function AddProducts() {
             Authorization: `Bearer ${TOKEN}`,
           },
           body: formData,
-        }
+        },
       );
 
       if (!res.ok) {
@@ -106,10 +107,11 @@ function AddProducts() {
       setSelectedSize("Size Large");
       setUploadedImages([]);
       setPreviewImages([]);
-      alert("Product added successfully!");
+      toast.success("Product added successfully!");
+      
     },
     onError: (error) => {
-      alert(error?.message || "Failed to add product");
+      toast.error(error?.message || "Failed to add product");
     },
   });
 
@@ -121,20 +123,30 @@ function AddProducts() {
     <div className="min-h-screen">
       {/* Top Header */}
       <div className="px-6 py-3 flex items-center justify-between">
-       <Link href="/all-product">
-         <button className="text-gray-600 hover:text-gray-800 transition-colors">
-          <ArrowLeft size={20} />
-        </button>
-       </Link>
+        <Link href="/all-product">
+          <button className="text-gray-600 hover:text-gray-800 transition-colors">
+            <ArrowLeft size={20} />
+          </button>
+        </Link>
         <h1 className="text-[36px] leading-[120px] font-bold text-[#000000]">
           Add Product
         </h1>
         <button
           onClick={handleSubmit}
-          className="flex items-center justify-center gap-2 bg-[#0024DA] hover:bg-[#0024DA]/90 text-white text-sm font-medium px-5 h-12 transition-all duration-200 rounded-lg shadow-sm"
+          disabled={addProductMutation.isPending}
+          className="flex items-center justify-center gap-2 bg-[#0024DA] hover:bg-[#0024DA]/90 text-white text-sm font-medium px-5 h-12 transition-all duration-200 rounded-lg shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Publish Product
-          <Box size={16} />
+          {addProductMutation.isPending ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              Publishing...
+            </>
+          ) : (
+            <>
+              Publish Product
+              <Box size={16} />
+            </>
+          )}
         </button>
       </div>
 

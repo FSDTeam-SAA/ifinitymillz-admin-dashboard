@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, ShoppingBasket, Menu, X, LayoutPanelLeft, HandCoins, User, ClipboardList, Settings } from "lucide-react";
+import { LayoutDashboard, ShoppingBasket, Menu, X, LayoutPanelLeft, HandCoins, User, ClipboardList, Settings, Newspaper } from "lucide-react";
 import { LogoutModal } from "../Dialogs/LogoutModal";
 import { useState } from "react";
 import Image from "next/image";
@@ -20,6 +20,7 @@ const navigation = [
   { name: "User List", href: "/all-users", icon: User  },
   { name: "Order History", href: "/order-history", icon: ClipboardList },
   { name: "Contact Messages", href: "/contact-messages", icon: ShoppingBasket },
+    { name: "Brodcust", href: "/brodcust", icon: Newspaper },
   { name: "Setting", href: "/settings", icon: Settings },
 ];
 
