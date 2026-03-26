@@ -106,6 +106,10 @@ export default function EditTreatment() {
     );
   };
 
+  const updateQuestionText = (qId: number, value: string) => {
+    setQuestions(questions.map((q) => (q.id === qId ? { ...q, question: value } : q)));
+  };
+
   const updateCorrectAnswer = (qId: number, value: string) => {
     setQuestions(
       questions.map((q) => (q.id === qId ? { ...q, correctAnswer: value } : q))
@@ -251,7 +255,11 @@ export default function EditTreatment() {
 
                   <div className="space-y-2">
                     <Label>Question Text</Label>
-                    <Input value={q.question} disabled className="bg-gray-50" />
+                    <Input
+                      value={q.question}
+                      onChange={(e) => updateQuestionText(q.id, e.target.value)}
+                      className="bg-gray-50"
+                    />
                   </div>
 
                   <div className="space-y-2">

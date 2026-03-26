@@ -39,6 +39,15 @@ type Treatment = {
   updatedAt: string;
 };
 
+type TreatmentResponse = {
+  data: Treatment[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+  };
+};
+
 const ITEMS_PER_PAGE = 3;
 
 export default function AllTreatments() {
@@ -51,13 +60,18 @@ export default function AllTreatments() {
   const TOKEN = session?.data?.user?.accessToken || "";
 
   // ─── Fetch API Treatments ─────────────────────────────
-  const { data, isLoading, error } = useQuery<Treatment[]>({
-    queryKey: ["treatments"],
+  const { data, isLoading, error } = useQuery<TreatmentResponse>({
+    queryKey: ["treatments", currentPage, ITEMS_PER_PAGE],
     queryFn: async () => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/treatment`);
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/treatment?page=${currentPage}&limit=${ITEMS_PER_PAGE}`
+      );
       if (!res.ok) throw new Error("Failed to fetch treatments");
       const result = await res.json();
-      return result.data || [];
+      return {
+        data: result.data || [],
+        meta: result.meta || { page: currentPage, limit: ITEMS_PER_PAGE, total: 0 },
+      };
     },
   });
 
@@ -131,11 +145,12 @@ export default function AllTreatments() {
 
   if (error) return <p>Error loading treatments</p>;
 
-  const totalItems = data?.length || 0;
+  const totalItems = data?.meta?.total || 0;
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
 
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const currentItems = (data || []).slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const currentItems = data?.data || [];
+  const endIndex = startIndex + currentItems.length;
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
@@ -238,7 +253,7 @@ export default function AllTreatments() {
             {totalItems > 0 && (
               <div className="text-sm text-gray-500">
                 Showing {startIndex + 1}–
-                {Math.min(startIndex + ITEMS_PER_PAGE, totalItems)} of {totalItems}
+                {Math.min(endIndex, totalItems)} of {totalItems}
               </div>
             )}
 
