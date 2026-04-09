@@ -3,25 +3,21 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, ShoppingBasket, Menu, X, LayoutPanelLeft, HandCoins, User, ClipboardList, Settings, Newspaper } from "lucide-react";
+import { LayoutDashboard, Menu, X, HandCoins, UserRound } from "lucide-react";
 import { LogoutModal } from "../Dialogs/LogoutModal";
 import { useState } from "react";
-import Image from "next/image";
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Dashboard Overview", href: "/", icon: LayoutDashboard },
   {
-    name: "All Products",
-    href: "/all-product",
-    icon: LayoutPanelLeft,
+    name: "User Management",
+    href: "/user-management",
+    icon: UserRound ,
   },
-  { name: "All Treatment", href: "/all-treatment", icon: HandCoins },
-   { name: "Treatment Benefit Details", href: "/benefit-details", icon: HandCoins },
-  { name: "User List", href: "/all-users", icon: User  },
-  { name: "Order History", href: "/order-history", icon: ClipboardList },
-  { name: "Contact Messages", href: "/contact-messages", icon: ShoppingBasket },
-    { name: "Brodcust", href: "/brodcust", icon: Newspaper },
-  { name: "Setting", href: "/settings", icon: Settings },
+  { name: "Participants/Entries", href: "/participants", icon: HandCoins },
+  { name: "Campaigns", href: "/campaigns", icon: HandCoins },
+  { name: "Winners/Draw Results", href: "/winners", icon: HandCoins },
+   { name: "Withdrawal Request", href: "/withdrawal-request", icon: HandCoins },
 ];
 
 export function Sidebar() {
@@ -56,7 +52,7 @@ export function Sidebar() {
       {/* Sidebar */}
       <div
         className={cn(
-          "flex h-screen sticky bottom-0 top-0 flex-col bg-[#CAE7FF] z-50 transition-transform duration-300 overflow-auto",
+          "flex h-screen sticky bottom-0 top-0 flex-col bg-[#181715] z-50 transition-transform duration-300 overflow-auto",
           // Mobile এ
           "fixed lg:static",
           "w-[240px] sm:w-[250px] lg:w-[300px]",
@@ -68,14 +64,15 @@ export function Sidebar() {
       >
         {/* Header with Logo - Logo সবসময় center এ */}
         <div className="flex items-center justify-center relative px-4 mt-2">
-          <div className="flex h-[70px] items-center gap-2">
-            <Image
+          <div className="flex h-[60px] items-center gap-2">
+            {/* <Image
               src="/images/logo.png"
               alt="Logo"
               width={80}
               height={80}
               className="object-contain w-full h-full"
-            />
+            /> */}
+            <h1 className="text-[#E9C349] text-2xl font-bold leading-[32px0] tracking-[0.6px] mt-5 pl-3">Wholeheart Campaigns</h1>
           </div>
 
           {/* Close Button - absolute position এ top right corner এ */}
@@ -87,7 +84,7 @@ export function Sidebar() {
             >
               <X className="h-6 w-6" />
             </button>
-          )}
+          )} 
         </div>
 
         {/* Navigation */}
@@ -105,20 +102,20 @@ export function Sidebar() {
                 className={cn(
                   "flex w-[90%] mx-auto items-center justify-start gap-2 space-y-1 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
                   isActive
-                    ? "bg-[#0F3D61] text-white"
-                    : "text-black hover:bg-slate-600/50 hover:text-white text-[18px]",
+                    ? "bg-[#E9C34921] text-[#E9C349]"
+                    : "text-[#787878] hover:bg-[#E9C34921] hover:text-[#E9C349 ] text-[18px]",
                 )}
               >
                 <item.icon
                   className={cn(
                     "h-5 w-5 sm:h-6 sm:w-6 transition-colors duration-200 flex-shrink-0",
-                    isActive ? "text-white" : "",
+                    isActive ? "text-[#E9C349]" : "",
                   )}
                 />
                 <span
                   className={cn(
                     "font-normal text-sm sm:text-base leading-[120%] transition-colors duration-200",
-                    isActive ? "text-white font-medium text-[18px]" : "text-[18px]",
+                    isActive ? "text-[#E9C349] font-medium text-[18px]" : "text-[18px]",
                   )}
                 >
                   {item.name}

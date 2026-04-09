@@ -1,14 +1,16 @@
-import React from 'react'
-import OverViewCard from './_components/OverViewCard'
-import SellReport from './_components/SellReport'
+import React from "react";
+import OverviewCard from "./_components/OverviewCard";
+import RevenueOverviewChart from "./_components/RevenueOverviewChart";
 
 function page() {
   return (
     <div>
-      <OverViewCard />
-      <SellReport />
+      <OverviewCard />
+      <div className="mt-10">
+        <RevenueOverviewChart />
+      </div>
     </div>
-  )
+  );
 }
 
-export default page
+export default page;
