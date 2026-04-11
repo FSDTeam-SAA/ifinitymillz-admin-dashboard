@@ -8,7 +8,7 @@ export const authOptions: NextAuthOptions = {
 
   session: {
     strategy: "jwt",
-    maxAge: 7 * 24 * 60 * 60, // 7 days
+    maxAge: 7 * 24 * 60 * 60,
   },
 
   providers: [
@@ -41,7 +41,8 @@ export const authOptions: NextAuthOptions = {
           const response = await res.json();
           console.log("Backend login response:", response);
 
-          if (!res.ok || !response?.success) {
+          // ✅ FIX 1: use response.status instead of success
+          if (!res.ok || !response?.status) {
             throw new Error(response?.message || "Login failed");
           }
 
@@ -52,14 +53,14 @@ export const authOptions: NextAuthOptions = {
             throw new Error("Invalid login response from server");
           }
 
-          // 🔥 Role check (only allow normal users)
-          if (user.role !== "admin") {
-            throw new Error("Only admins are allowed to login here");
+          // ✅ FIX 2: role check (match your API: USER)
+          if (user.role !== "ADMIN") {
+            throw new Error("Only admin are allowed to login here");
           }
 
           return {
             id: user._id,
-            name: `${user.firstName} ${user.lastName}`,
+            name: user.email, // ✅ FIX 3: no firstName/lastName in API
             email: user.email,
             role: user.role,
             accessToken: accessToken,
