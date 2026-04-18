@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { X, CheckCircle, XCircle, FileText } from "lucide-react";
+import { X, CheckCircle, XCircle, FileText, DollarSign } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 
@@ -67,6 +67,59 @@ function TextareaField({ label, value }: { label: string; value: string }) {
       >
         {value || "—"}
       </div>
+    </div>
+  );
+}
+
+function StatusActionFooter({
+  status,
+  isUpdating,
+  onStatusChange,
+}: {
+  status: StatusType;
+  isUpdating: boolean;
+  onStatusChange: (status: StatusType) => void;
+}) {
+  if (status === "Rejected" || status === "Paid") {
+    return null;
+  }
+
+  if (status === "Approved") {
+    return (
+      <div className="border-t border-[#2a2a2a]">
+        <button
+          onClick={() => onStatusChange("Paid")}
+          disabled={isUpdating}
+          className="flex w-full items-center justify-center gap-2 py-4 text-[#111111] text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
+          style={{ background: "#e8b84b" }}
+        >
+          <DollarSign size={16} />
+          {isUpdating ? "Updating..." : "Paid"}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-2 border-t border-[#2a2a2a]">
+      <button
+        onClick={() => onStatusChange("Rejected")}
+        disabled={isUpdating}
+        className="flex items-center justify-center gap-2 py-4 text-white text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
+        style={{ background: "#e05555" }}
+      >
+        <XCircle size={16} />
+        {isUpdating ? "Updating..." : "Reject"}
+      </button>
+      <button
+        onClick={() => onStatusChange("Approved")}
+        disabled={isUpdating}
+        className="flex items-center justify-center gap-2 py-4 text-white text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
+        style={{ background: "#3dba6f" }}
+      >
+        <CheckCircle size={16} />
+        {isUpdating ? "Updating..." : "Accept"}
+      </button>
     </div>
   );
 }
@@ -210,27 +263,13 @@ export function CampaignDetailsModal({
           )}
         </div>
 
-        {/* Footer Actions */}
-        <div className="grid grid-cols-2 border-t border-[#2a2a2a]">
-          <button
-            onClick={() => updateMutation.mutate("Rejected")}
-            disabled={updateMutation.isPending}
-            className="flex items-center justify-center gap-2 py-4 text-white text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
-            style={{ background: "#e05555" }}
-          >
-            <XCircle size={16} />
-            {updateMutation.isPending ? "Updating..." : "Reject"}
-          </button>
-          <button
-            onClick={() => updateMutation.mutate("Approved")}
-            disabled={updateMutation.isPending}
-            className="flex items-center justify-center gap-2 py-4 text-white text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
-            style={{ background: "#3dba6f" }}
-          >
-            <CheckCircle size={16} />
-            {updateMutation.isPending ? "Updating..." : "Accept"}
-          </button>
-        </div>
+        {appData && (
+          <StatusActionFooter
+            status={appData.status}
+            isUpdating={updateMutation.isPending}
+            onStatusChange={(status) => updateMutation.mutate(status)}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );

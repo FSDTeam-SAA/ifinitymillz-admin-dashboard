@@ -153,7 +153,7 @@ function WithdrawalRequest() {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/withdrawals/${id}/status`,
         {
-          method: "PATCH",
+          method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${TOKEN}`,

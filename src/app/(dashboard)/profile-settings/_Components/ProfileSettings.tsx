@@ -6,9 +6,19 @@ import Image from "next/image";
 import React, { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 
+type ProfileForm = {
+  name: string;
+  username: string;
+  email: string;
+  phone: string;
+  dob: string;
+  gender: string;
+  address: string;
+};
+
 export default function ProfileSettings() {
-  const [form, setForm] = useState({
-    fullName: "Mr Raja",
+  const [form, setForm] = useState<ProfileForm>({
+    name: "Mr Raja",
     username: "raja123",
     email: "raja123@gmail.com",
     phone: "+1 (888) 000-0000",
@@ -50,11 +60,15 @@ export default function ProfileSettings() {
   useEffect(() => {
     if (!singleUserData) return;
     const addr = singleUserData.address;
-    const addressStr = [addr?.roadArea, addr?.cityState, addr?.country, addr?.postalCode]
-      .filter(Boolean)
-      .join(", ");
+    const addressStr =
+      typeof addr === "string"
+        ? addr
+        : [addr?.roadArea, addr?.cityState, addr?.country, addr?.postalCode]
+            .filter(Boolean)
+            .join(", ");
+
     setForm({
-      fullName: singleUserData.name || "",
+      name: singleUserData.name || "",
       username: singleUserData.email?.split("@")[0] || "",
       email: singleUserData.email || "",
       phone: singleUserData.phone || "",
@@ -73,18 +87,18 @@ export default function ProfileSettings() {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/user/me`,
         {
-          method: "PATCH",
+          method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${TOKEN}`,
           },
           body: JSON.stringify({
-            name: form.fullName,
-            email: form.email,
+            name: form.name,
+            // email: form.email,
             phone: form.phone,
             dob: form.dob,
             gender: form.gender,
-            address: { roadArea: form.address },
+            address: form.address,
           }),
         }
       );
@@ -125,9 +139,9 @@ export default function ProfileSettings() {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/auth/change-password`,
         {
-          method: "POST",
+          method: "PUT",
           headers: {
-            "Content-Type": "application/json",
+            // "Content-Type": "application/json",
             Authorization: `Bearer ${TOKEN}`,
           },
           body: JSON.stringify({
@@ -257,8 +271,8 @@ export default function ProfileSettings() {
           <div>
             <label className="block text-xs text-gray-400 mb-1.5">Full Name</label>
             <input
-              value={form.fullName}
-              onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder="Mr Raja"
               className={inputCls}
             />
@@ -270,6 +284,7 @@ export default function ProfileSettings() {
               <label className="block text-xs text-gray-400 mb-1.5">Email</label>
               <input
                 value={form.email}
+                disabled
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 placeholder="raja123@gmail.com"
                 className={inputCls}

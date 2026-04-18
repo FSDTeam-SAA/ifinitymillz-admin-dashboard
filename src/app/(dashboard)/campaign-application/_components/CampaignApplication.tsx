@@ -10,10 +10,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Eye, CheckCircle, XCircle } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  CheckCircle,
+  XCircle,
+  DollarSign,
+} from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { CampaignDetailsModal } from "./CampaignDetailsModal";
+import { toast } from "sonner";
 
 type StatusType = "Pending" | "Approved" | "Paid" | "Rejected";
 
@@ -35,10 +43,106 @@ interface ApplicationItem {
 
 const PAGE_SIZE = 7;
 
+function ActionButton({
+  children,
+  onClick,
+  disabled,
+  className = "",
+  style,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-opacity hover:opacity-80 disabled:opacity-50 ${className}`}
+      style={style}
+    >
+      {children}
+    </button>
+  );
+}
+
+function ApplicationActions({
+  item,
+  isUpdating,
+  onStatusChange,
+  onViewDetails,
+}: {
+  item: ApplicationItem;
+  isUpdating: boolean;
+  onStatusChange: (status: StatusType) => void;
+  onViewDetails: () => void;
+}) {
+  const viewButton = (
+    <ActionButton
+      onClick={onViewDetails}
+      style={{
+        background: "#1a3a5a",
+        color: "#7ec8f5",
+        border: "1px solid #2a5a8a",
+      }}
+    >
+      <Eye size={11} />
+      View details
+    </ActionButton>
+  );
+
+  if (item.status === "Rejected" || item.status === "Paid") {
+    return viewButton;
+  }
+
+  if (item.status === "Approved") {
+    return (
+      <>
+        <ActionButton
+          onClick={() => onStatusChange("Paid")}
+          disabled={isUpdating}
+          style={{ background: "#e8b84b", color: "#111111" }}
+        >
+          <DollarSign size={11} />
+          Pay Now
+        </ActionButton>
+        {viewButton}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <ActionButton
+        onClick={() => onStatusChange("Approved")}
+        disabled={isUpdating}
+        style={{ background: "#3dba6f", color: "#ffffff" }}
+      >
+        <CheckCircle size={11} />
+        Accept
+      </ActionButton>
+
+      <ActionButton
+        onClick={() => onStatusChange("Rejected")}
+        disabled={isUpdating}
+        style={{ background: "#e05555", color: "#ffffff" }}
+      >
+        <XCircle size={11} />
+        Reject
+      </ActionButton>
+
+      {viewButton}
+    </>
+  );
+}
+
 function CampaignApplication() {
   const [currentPage, setCurrentPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
   const { data: session } = useSession();
@@ -75,7 +179,7 @@ function CampaignApplication() {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/applications/${id}/status`,
         {
-          method: "PATCH",
+          method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${TOKEN}`,
@@ -85,8 +189,18 @@ function CampaignApplication() {
       );
       return res.json();
     },
+    onMutate: ({ id }) => {
+      setUpdatingId(id);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["campaignApplications"] });
+      toast.success("Status update successfully")
+    },
+    onError: () => {
+        toast.error("Something went wrong. Please try again.");
+    },
+    onSettled: () => {
+      setUpdatingId(null);
     },
   });
 
@@ -162,42 +276,14 @@ function CampaignApplication() {
                     {/* Actions — right aligned */}
                     <TableCell className="py-4 pr-6">
                       <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() =>
-                            updateMutation.mutate({ id: item._id, status: "Approved" })
+                        <ApplicationActions
+                          item={item}
+                          isUpdating={updateMutation.isPending && updatingId === item._id}
+                          onStatusChange={(status) =>
+                            updateMutation.mutate({ id: item._id, status })
                           }
-                          disabled={updateMutation.isPending}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold text-white transition-opacity hover:opacity-80 disabled:opacity-50"
-                          style={{ background: "#3dba6f" }}
-                        >
-                          <CheckCircle size={11} />
-                          Accept
-                        </button>
-
-                        <button
-                          onClick={() =>
-                            updateMutation.mutate({ id: item._id, status: "Rejected" })
-                          }
-                          disabled={updateMutation.isPending}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold text-white transition-opacity hover:opacity-80 disabled:opacity-50"
-                          style={{ background: "#e05555" }}
-                        >
-                          <XCircle size={11} />
-                          Reject
-                        </button>
-
-                        <button
-                          onClick={() => handleViewDetails(item._id)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-opacity hover:opacity-80"
-                          style={{
-                            background: "#1a3a5a",
-                            color: "#7ec8f5",
-                            border: "1px solid #2a5a8a",
-                          }}
-                        >
-                          <Eye size={11} />
-                          view details
-                        </button>
+                          onViewDetails={() => handleViewDetails(item._id)}
+                        />
                       </div>
                     </TableCell>
                   </TableRow>
